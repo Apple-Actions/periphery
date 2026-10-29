@@ -1,0 +1,41 @@
+name: 'Periphery'
+description: 'Install a pinned Periphery and scan Swift for unused code.'
+author: 'Apple Github Actions (iOS & macOS)'
+inputs:
+  project:
+    description: 'Xcode project path (used to resolve packages; also passed to periphery when .periphery.yml is absent).'
+    required: true
+  scheme:
+    description: 'Xcode scheme.'
+    required: true
+  version:
+    description: 'Periphery version (for example 3.8.0) or latest. Wins over version-file if both are set.'
+    required: false
+  version-file:
+    description: 'Path to a file whose first non-empty, non-# line is the Periphery version (for example .periphery-version).'
+    required: false
+  xcode-version:
+    description: 'Xcode version to select (for example 16.4). Empty reads .xcode-version at the repo root.'
+    required: false
+    default: ''
+  args:
+    description: 'Extra periphery scan arguments.'
+    required: false
+    default: '--strict --relative-results --format github-actions'
+  token:
+    description: 'GitHub token used to resolve latest and download release assets (avoids API rate limits).'
+    required: false
+    default: ${{ github.token }}
+outputs:
+  version:
+    description: 'Resolved Periphery version that was installed.'
+  periphery-path:
+    description: 'Absolute path to the periphery binary.'
+  xcode-version:
+    description: 'Resolved Xcode version that was selected.'
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
+branding:
+  icon: 'search'
+  color: 'purple'

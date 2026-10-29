@@ -1,0 +1,68 @@
+name: test
+
+run-name: test
+
+on:
+  push:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Enable corepack (workaround)
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: test
+        run: yarn test
+
+  validate-inputs:
+    name: validate-inputs
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+
+      - name: Reject non-macOS runners
+        run: |
+          set +e
+          output=$(env \
+            'INPUT_PROJECT=App.xcodeproj' \
+            'INPUT_SCHEME=App' \
+            'INPUT_VERSION-FILE=.missing-periphery-version' \
+            'INPUT_ARGS=--strict' \
+            node dist/index.js)
+          code=$?
+          set -e
+          echo "${output//::/: :}"
+          test "$code" -ne 0 || { echo "::error::Expected a non-zero exit code"; exit 1; }
+          echo "$output" | grep -qF '::error::Periphery action supports macOS runners only' \
+            || { echo "::error::Expected a macOS-only failure message"; exit 1; }
