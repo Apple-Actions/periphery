@@ -35,8 +35,10 @@ Runs on `macos-*` only. Selects Xcode, resolves Swift packages for the given pro
 
 ```text
 # .xcode-version
-16.4
+~27.0.0
 ```
+
+npm-style ranges (`~27.0.0`, `^16.4.0`) and exact/partial versions (`16.4`) are supported, matching [`maxim-lobanov/setup-xcode`](https://github.com/maxim-lobanov/setup-xcode). When several installed Xcodes satisfy a range, the highest matching version is selected.
 
 ```yaml
 - uses: Apple-Actions/periphery@v1
@@ -56,7 +58,7 @@ If both `version` and `version-file` are set, `version` wins. If neither is set,
 | `scheme` | *(required)* | Scheme to resolve and scan |
 | `version` | | Periphery version (for example `3.8.0`) or `latest` |
 | `version-file` | | Path to a file containing the Periphery version |
-| `xcode-version` | `.xcode-version` | Xcode version to select on the runner |
+| `xcode-version` | `.xcode-version` | Xcode version or npm-style range to select (for example `16.4`, `~27.0.0`) |
 | `args` | `--strict --relative-results --format github-actions` | Extra `periphery scan` flags |
 | `token` | `${{ github.token }}` | Token for GitHub Releases API / downloads |
 

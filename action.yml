@@ -15,7 +15,7 @@ inputs:
     description: 'Path to a file whose first non-empty, non-# line is the Periphery version (for example .periphery-version).'
     required: false
   xcode-version:
-    description: 'Xcode version to select (for example 16.4). Empty reads .xcode-version at the repo root.'
+    description: 'Xcode version to select (for example 16.4, ~27.0.0, or ^16.4.0). Empty reads .xcode-version at the repo root. When several installs match a range, the highest satisfying version is selected.'
     required: false
     default: ''
   args:
