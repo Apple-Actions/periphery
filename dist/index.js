@@ -23619,6 +23619,7 @@ function resolveVersionSpec({
 }
 
 // src/xcode.ts
+var import_semver = __toESM(require_semver2(), 1);
 import { existsSync as existsSync5, readdirSync as readdirSync2, readFileSync as readFileSync2 } from "node:fs";
 import { isAbsolute as isAbsolute2, join as join6 } from "node:path";
 var APPLICATIONS = "/Applications";
@@ -23641,8 +23642,50 @@ function resolveXcodeVersion(input, workspace) {
 function developerDir(appPath) {
   return join6(appPath, "Contents", "Developer");
 }
-function versionMatches(installed, wanted) {
+function normalizeXcodeVersion(version) {
+  const coerced = import_semver.default.coerce(version);
+  return coerced ? coerced.version : null;
+}
+function prefixMatches(installed, wanted) {
   return installed === wanted || installed.startsWith(`${wanted}.`);
+}
+function versionSatisfies(installed, wanted) {
+  const trimmedWanted = wanted.trim();
+  if (!trimmedWanted) {
+    return false;
+  }
+  const installedSemver = normalizeXcodeVersion(installed);
+  if (installedSemver && import_semver.default.validRange(trimmedWanted)) {
+    return import_semver.default.satisfies(installedSemver, trimmedWanted, {
+      includePrerelease: true
+    });
+  }
+  return prefixMatches(installed, trimmedWanted);
+}
+function bestMatchingXcode(candidates, wanted) {
+  const matching = candidates.filter((c) => versionSatisfies(c.installed, wanted));
+  if (matching.length === 0) {
+    return null;
+  }
+  const range = import_semver.default.validRange(wanted.trim());
+  if (range) {
+    const byVersion = /* @__PURE__ */ new Map();
+    for (const candidate of matching) {
+      const version = normalizeXcodeVersion(candidate.installed);
+      if (version) {
+        byVersion.set(version, candidate);
+      }
+    }
+    const best = import_semver.default.maxSatisfying([...byVersion.keys()], range, {
+      includePrerelease: true
+    });
+    if (best) {
+      return byVersion.get(best) ?? null;
+    }
+  }
+  return [...matching].sort(
+    (a, b) => b.installed.length - a.installed.length
+  )[0];
 }
 async function readXcodeAppVersion(appPath) {
   const xcodebuild = join6(developerDir(appPath), "usr", "bin", "xcodebuild");
@@ -23687,7 +23730,7 @@ async function selectXcode(version) {
   const preferred = preferredAppPath(version);
   if (preferred) {
     const installed = await readXcodeAppVersion(preferred);
-    if (installed && versionMatches(installed, version)) {
+    if (installed && versionSatisfies(installed, version)) {
       await exec("sudo", ["xcode-select", "-s", developerDir(preferred)]);
       info(`Xcode is set to ${installed} (${preferred})`);
       return installed;
@@ -23696,17 +23739,16 @@ async function selectXcode(version) {
   const matches = [];
   for (const appPath of listXcodeApps()) {
     const installed = await readXcodeAppVersion(appPath);
-    if (installed && versionMatches(installed, version)) {
+    if (installed && versionSatisfies(installed, version)) {
       matches.push({ appPath, installed });
     }
   }
-  if (matches.length === 0) {
+  const chosen = bestMatchingXcode(matches, version);
+  if (!chosen) {
     throw new Error(
       `Could not find an installed Xcode matching version '${version}'.`
     );
   }
-  matches.sort((a, b) => b.installed.length - a.installed.length);
-  const chosen = matches[0];
   await exec("sudo", ["xcode-select", "-s", developerDir(chosen.appPath)]);
   info(`Xcode is set to ${chosen.installed} (${chosen.appPath})`);
   return chosen.installed;
