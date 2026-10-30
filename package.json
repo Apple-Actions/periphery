@@ -34,11 +34,11 @@
     "@actions/core": "~3.0.0",
     "@actions/exec": "~3.0.0",
     "@actions/tool-cache": "~4.0.0",
-    "semver": "^7.6.3"
+    "semver": "^7.8.0"
   },
   "devDependencies": {
     "@types/node": "~24.19.2",
-    "@types/semver": "^7.5.8",
+    "@types/semver": "^7.8.0",
     "esbuild": "~0.28.2",
     "eslint": "~10.13.0",
     "eslint-plugin-github": "~6.1.2",
